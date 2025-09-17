@@ -1,14 +1,16 @@
 # Internet Speed Test 🚀
 
-A fast, robust, and optimized Python script for testing your internet connection speed with multiple fallback methods and advanced error handling.
+A fast, robust, and optimized Python script for testing your internet connection speed with multiple fallback methods, advanced error handling, and continuous monitoring capabilities.
 
 ## Features
 
 - **Multiple Test Modes**: Quick, standard, ping-only, and alternative tests
+- **Continuous Monitoring**: Run tests at configurable intervals with data logging
 - **Server Caching**: Automatic caching of best servers for faster subsequent tests
 - **Optimized Performance**: Reduced test times through threading and configuration optimizations
 - **Robust Fallback System**: Alternative speed test when speedtest.net is blocked
 - **Advanced Error Handling**: Retry logic and multiple configuration attempts
+- **Data Logging**: Save results to JSON files with timestamps and statistics
 - **Detailed Results**: Download speed, upload speed, and ping measurements
 - **Comprehensive Diagnostics**: Built-in connection troubleshooting
 - **Command Line Interface**: Easy-to-use CLI with multiple options
@@ -58,6 +60,25 @@ python speed_test.py --diagnose
 python speed_test.py --clear-cache
 ```
 
+### Continuous Monitoring Commands
+
+```bash
+# Run tests every 30 seconds indefinitely
+python speed_test.py --continuous 30
+
+# Run alternative tests every 10 seconds, max 20 tests
+python speed_test.py --alternative --continuous 10 --max-tests 20
+
+# Monitor with ping-only every 5 seconds, save to file
+python speed_test.py --ping-only --continuous 5 --output network_log.json
+
+# Quick tests every 60 seconds with logging
+python speed_test.py --quick --continuous 60 --max-tests 100 --output hourly_monitor.json
+
+# Full monitoring with all features
+python speed_test.py --continuous 15 --max-tests 50 --output monitoring.json
+```
+
 ### Command Line Options
 
 | Option | Short | Description |
@@ -66,6 +87,9 @@ python speed_test.py --clear-cache
 | `--quick` | `-q` | Run quick speed test (faster but less precise) |
 | `--ping-only` | `-p` | Run ping test only (fastest) |
 | `--alternative` | `-a` | Use alternative speed test method (if speedtest.net is blocked) |
+| `--continuous SECONDS` | `-c` | Run tests continuously every SECONDS interval |
+| `--max-tests COUNT` | `-m` | Maximum number of tests to run (use with --continuous) |
+| `--output FILE` | `-o` | Save results to JSON file (use with --continuous) |
 | `--no-cache` | | Don't use cached server (slower but more accurate) |
 | `--clear-cache` | | Clear server cache and exit |
 | `--diagnose` | `-d` | Diagnose connection issues |
@@ -79,6 +103,7 @@ python speed_test.py --clear-cache
 | **Quick Mode** | 15-25 seconds | Fast general test |
 | **Standard (cached)** | 20-35 seconds | Normal test with cached server |
 | **Standard (no cache)** | 30-45 seconds | Most accurate test |
+| **Continuous Monitoring** | Variable | Long-term network monitoring |
 
 ## Speed Optimizations
 
@@ -112,6 +137,14 @@ python speed_test.py --clear-cache
 - Multiple configuration attempts with retry logic
 - Automatic fallback to alternative methods
 - Comprehensive error diagnosis and solutions
+
+### 📊 Continuous Monitoring
+- Configurable test intervals (minimum 1 second)
+- Real-time test numbering and timestamps
+- Automatic data logging to JSON files
+- Summary statistics (min/max/average speeds and ping)
+- Graceful interruption with Ctrl+C
+- Optional test count limits
 
 ## Output Format
 
@@ -147,6 +180,78 @@ Average Ping: 30.96 ms
 Note: Results may vary from speedtest.net
 ========================================
 ```
+
+## Continuous Monitoring
+
+The script supports continuous monitoring with automatic data logging and statistics.
+
+### Monitoring Output Example
+```
+Starting continuous speed testing every 10 seconds...
+Will run 5 tests total
+Press Ctrl+C to stop
+
+==================================================
+TEST #1 - 2025-09-17 13:19:43
+==================================================
+[Test results here]
+
+Waiting 10 seconds until next test...
+
+==================================================
+TEST #2 - 2025-09-17 13:19:53
+==================================================
+[Test results here]
+
+...
+
+Completed 5 tests. Stopping.
+Results saved to monitoring.json
+
+==================================================
+SUMMARY STATISTICS
+==================================================
+Total tests run: 5
+Successful tests: 5
+Download Speed - Min: 11.63 Mbps
+Download Speed - Max: 15.05 Mbps
+Download Speed - Avg: 13.24 Mbps
+Ping - Min: 25.10 ms
+Ping - Max: 38.88 ms
+Ping - Avg: 31.99 ms
+==================================================
+```
+
+### JSON Output Format
+```json
+[
+  {
+    "timestamp": "2025-09-17 13:19:43",
+    "test_number": 1,
+    "download_speed": 15.054236097308856,
+    "upload_speed": null,
+    "ping": 35.223192638821075,
+    "test_type": "alternative"
+  },
+  {
+    "timestamp": "2025-09-17 13:19:53",
+    "test_number": 2,
+    "download_speed": 12.33960612472587,
+    "upload_speed": 25.67,
+    "ping": 28.45,
+    "test_type": "speedtest"
+  }
+]
+```
+
+### Monitoring Use Cases
+- **Network Performance**: Track connection quality over time
+- **ISP Verification**: Monitor if you're getting advertised speeds
+- **Troubleshooting**: Identify patterns in connection issues
+- **Peak Analysis**: See how speeds vary throughout the day
+- **Gaming/Streaming**: Monitor for latency spikes during activities
+- **Work From Home**: Ensure stable connection during business hours
+- **Service Level Monitoring**: Automated network quality reporting
 
 ## Cache Management
 
@@ -221,6 +326,23 @@ python speed_test.py --no-cache
      python speed_test.py --alternative
      ```
 
+#### 6. **Continuous monitoring best practices**
+   - **Recommended intervals**: 
+     - Ping-only: 5-10 seconds for real-time monitoring
+     - Quick tests: 30-60 seconds for regular monitoring  
+     - Full tests: 300+ seconds (5+ minutes) for detailed analysis
+   - **Solutions**:
+     ```bash
+     # Light monitoring (ping-only every 10 seconds)
+     python speed_test.py --ping-only --continuous 10 --max-tests 100
+     
+     # Regular monitoring (quick tests every minute)
+     python speed_test.py --quick --continuous 60 --output hourly.json
+     
+     # Detailed monitoring (full tests every 5 minutes)
+     python speed_test.py --continuous 300 --max-tests 50 --output detailed.json
+     ```
+
 ### Diagnostic Commands
 
 ```bash
@@ -232,6 +354,9 @@ python speed_test.py --ping-only
 
 # Test without speedtest.net dependency
 python speed_test.py --alternative
+
+# Monitor network continuously for troubleshooting
+python speed_test.py --continuous 10 --max-tests 20 --output debug.json
 ```
 
 ### What the diagnostics check:
@@ -254,9 +379,12 @@ If you're on a corporate network or have strict firewall settings:
 - Use `--quick` for routine monitoring
 - Use `--ping-only` for basic connectivity checks
 - Use `--alternative` when speedtest.net is blocked or slow
+- Use `--continuous` with appropriate intervals for network monitoring
 - Clear cache if you change locations: `python speed_test.py --clear-cache`
 - Use `--no-cache` if you want the most accurate server selection
 - Run `--diagnose` first if experiencing issues
+- Use `--max-tests` to prevent runaway continuous monitoring
+- Save monitoring data with `--output` for trend analysis
 
 ## Technical Details
 
@@ -266,10 +394,11 @@ If you're on a corporate network or have strict firewall settings:
 - `sys`: System operations (built-in)
 - `threading`: Thread management (built-in)
 - `time`: Time operations (built-in)
-- `json`: JSON handling for cache (built-in)
+- `json`: JSON handling for cache and data logging (built-in)
 - `os`: Operating system interface (built-in)
 - `urllib.request`: HTTP requests for alternative tests (built-in)
 - `socket`: Network socket operations (built-in)
+- `datetime`: Timestamp generation for monitoring (built-in)
 
 ### Speed Test Process
 1. **Configuration Attempt**: Try multiple speedtest configurations with retry logic

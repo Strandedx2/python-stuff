@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-09-17 13:19:43",
+    "test_number": 1,
+    "download_speed": 15.054236097308856,
+    "upload_speed": null,
+    "ping": 35.223192638821075,
+    "test_type": "alternative"
+  },
+  {
+    "timestamp": "2025-09-17 13:19:51",
+    "test_number": 2,
+    "download_speed": 6.995565043156622,
+    "upload_speed": null,
+    "ping": 33.77064069112142,
+    "test_type": "alternative"
+  },
+  {
+    "timestamp": "2025-09-17 13:20:03",
+    "test_number": 3,
+    "download_speed": 12.33960612472587,
+    "upload_speed": null,
+    "ping": 38.88824250962999,
+    "test_type": "alternative"
+  }
+]

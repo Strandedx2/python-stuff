@@ -7,9 +7,75 @@ import json
 import os
 import urllib.request
 import socket
+from datetime import datetime
 
-def test_speed_alternative():
-  """Alternative speed test using a different approach."""
+def continuous_test(test_function, interval, max_tests=None, output_file=None):
+  """Run speed tests continuously at specified intervals."""
+  print(f"Starting continuous speed testing every {interval} seconds...")
+  if max_tests:
+    print(f"Will run {max_tests} tests total")
+  print("Press Ctrl+C to stop\n")
+  
+  test_count = 0
+  results = []
+  
+  try:
+    while True:
+      test_count += 1
+      timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+      
+      print(f"\n{'='*50}")
+      print(f"TEST #{test_count} - {timestamp}")
+      print(f"{'='*50}")
+      
+      try:
+        # Capture results if using alternative test
+        if test_function == test_speed_alternative:
+          result = capture_alternative_test_result()
+        else:
+          # For speedtest.net tests, just run normally
+          test_function()
+          result = None
+        
+        # Log results if output file is specified
+        if output_file and result:
+          results.append({
+            'timestamp': timestamp,
+            'test_number': test_count,
+            **result
+          })
+          save_results_to_file(results, output_file)
+        
+      except KeyboardInterrupt:
+        raise
+      except Exception as e:
+        print(f"Test #{test_count} failed: {e}")
+        if output_file:
+          results.append({
+            'timestamp': timestamp,
+            'test_number': test_count,
+            'error': str(e)
+          })
+      
+      # Check if we've reached max tests
+      if max_tests and test_count >= max_tests:
+        print(f"\nCompleted {max_tests} tests. Stopping.")
+        break
+      
+      # Wait for next test
+      if max_tests is None or test_count < max_tests:
+        print(f"\nWaiting {interval} seconds until next test...")
+        time.sleep(interval)
+  
+  except KeyboardInterrupt:
+    print(f"\n\nStopped by user after {test_count} tests.")
+  
+  if output_file and results:
+    print(f"Results saved to {output_file}")
+    print_summary_stats(results)
+
+def capture_alternative_test_result():
+  """Capture results from alternative test for logging."""
   print("Running alternative speed test...")
   print("Note: This is a basic test and may be less accurate than speedtest.net")
   
@@ -96,8 +162,67 @@ def test_speed_alternative():
     print("Note: Results may vary from speedtest.net")
     print("="*40)
     
+    return {
+      'download_speed': download_speed,
+      'upload_speed': None,
+      'ping': overall_ping,
+      'test_type': 'alternative'
+    }
+    
   except Exception as e:
     print(f"Alternative test failed: {e}")
+    return {
+      'download_speed': 0,
+      'upload_speed': None,
+      'ping': 0,
+      'test_type': 'alternative',
+      'error': str(e)
+    }
+
+def save_results_to_file(results, filename):
+  """Save test results to a JSON file."""
+  try:
+    with open(filename, 'w') as f:
+      json.dump(results, f, indent=2)
+  except Exception as e:
+    print(f"Failed to save results: {e}")
+
+def print_summary_stats(results):
+  """Print summary statistics from test results."""
+  if not results:
+    return
+  
+  successful_tests = [r for r in results if 'error' not in r and r.get('download_speed', 0) > 0]
+  
+  if not successful_tests:
+    print("\nNo successful tests to summarize.")
+    return
+  
+  download_speeds = [r['download_speed'] for r in successful_tests if r.get('download_speed')]
+  ping_times = [r['ping'] for r in successful_tests if r.get('ping')]
+  
+  print(f"\n{'='*50}")
+  print("SUMMARY STATISTICS")
+  print(f"{'='*50}")
+  print(f"Total tests run: {len(results)}")
+  print(f"Successful tests: {len(successful_tests)}")
+  
+  if download_speeds:
+    print(f"Download Speed - Min: {min(download_speeds):.2f} Mbps")
+    print(f"Download Speed - Max: {max(download_speeds):.2f} Mbps")
+    print(f"Download Speed - Avg: {sum(download_speeds)/len(download_speeds):.2f} Mbps")
+  
+  if ping_times:
+    print(f"Ping - Min: {min(ping_times):.2f} ms")
+    print(f"Ping - Max: {max(ping_times):.2f} ms")
+    print(f"Ping - Avg: {sum(ping_times)/len(ping_times):.2f} ms")
+  
+  print(f"{'='*50}")
+
+def test_speed_alternative():
+  """Alternative speed test using a different approach."""
+  result = capture_alternative_test_result()
+  return result
 
 def test_speed(quick_mode=False, use_cached_server=False):
   """Test internet speed and display results."""
@@ -346,6 +471,12 @@ def main():
              help="Run ping test only (fastest)")
   parser.add_argument("--alternative", "-a", action="store_true",
              help="Use alternative speed test method (if speedtest.net is blocked)")
+  parser.add_argument("--continuous", "-c", type=int, metavar="SECONDS",
+             help="Run tests continuously every SECONDS interval")
+  parser.add_argument("--max-tests", "-m", type=int, metavar="COUNT",
+             help="Maximum number of tests to run (use with --continuous)")
+  parser.add_argument("--output", "-o", type=str, metavar="FILE",
+             help="Save results to JSON file (use with --continuous)")
   parser.add_argument("--no-cache", action="store_true",
              help="Don't use cached server (slower but more accurate)")
   parser.add_argument("--clear-cache", action="store_true",
@@ -370,13 +501,38 @@ def main():
     diagnose_connection()
     return
   
-  # Run alternative test if requested
-  if args.alternative:
-    test_speed_alternative()
+  # Validate continuous testing arguments
+  if args.max_tests and not args.continuous:
+    print("Error: --max-tests can only be used with --continuous")
     return
   
-  # Choose test mode
-  if args.ping_only:
+  if args.output and not args.continuous:
+    print("Error: --output can only be used with --continuous")
+    return
+  
+  if args.continuous:
+    if args.continuous < 1:
+      print("Error: Interval must be at least 1 second")
+      return
+    
+    # Determine which test function to use
+    if args.alternative:
+      test_func = test_speed_alternative
+    elif args.ping_only:
+      test_func = ping_only_test
+    elif args.quick:
+      test_func = lambda: test_speed(quick_mode=True, use_cached_server=not args.no_cache)
+    else:
+      test_func = lambda: test_speed(quick_mode=False, use_cached_server=not args.no_cache)
+    
+    # Run continuous tests
+    continuous_test(test_func, args.continuous, args.max_tests, args.output)
+    return
+  
+  # Run single test (original behavior)
+  if args.alternative:
+    test_speed_alternative()
+  elif args.ping_only:
     ping_only_test()
   elif args.quick:
     test_speed(quick_mode=True, use_cached_server=not args.no_cache)
