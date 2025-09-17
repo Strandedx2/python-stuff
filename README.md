@@ -1,2 +1,2 @@
 # python-stuff
-random python things I have made but don't deserve there own repo
+Things I've build in python that I don't think need there own repo

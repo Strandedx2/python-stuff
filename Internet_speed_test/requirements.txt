@@ -1,0 +1,7 @@
+# Requirements for Internet Speed Test Script
+# This file contains all the Python packages needed to run speed_test.py
+
+# Main dependency for internet speed testing
+speedtest-cli==2.1.3
+
+# Note: argparse and sys are part of Python standard library (no installation needed)
